@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}同期对比分析{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/period_comparison.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">同期对比分析</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <select class="form-control" id="indicator-select">
+                                <option value="">请选择指标</option>
+                                {% for indicator in indicators %}
+                                <option value="{{ indicator.code }}">{{ indicator.code }} - {{ indicator.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" class="form-control" id="start-date">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" class="form-control" id="end-date">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary" id="query-btn">查询</button>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div id="chart-container" style="height: 400px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="comparison-table">
+                                    <thead>
+                                        <tr>
+                                            <th>日期</th>
+                                            <th>当前值</th>
+                                            <th>去年同期值</th>
+                                            <th>同比变化</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="{{ url_for('static', filename='js/period_comparison.js') }}"></script>
+{% endblock %} 

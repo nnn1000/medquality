@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block title %}仪表盘{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 头部信息 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">仪表盘</h1>
+        <div>
+            {% if latest_period %}
+            <span class="badge bg-primary">当前周期: {{ latest_period.name }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 统计数据卡片 -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="stat-title mb-1">医院数量</div>
+                            <div class="stat-value">{{ stats.hospital_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-hospital stat-icon text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="stat-title mb-1">指标数量</div>
+                            <div class="stat-value">{{ stats.indicator_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-list-alt stat-icon text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="stat-title mb-1">原始数据</div>
+                            <div class="stat-value">{{ stats.raw_data_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-database stat-icon text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="stat-title mb-1">计算结果</div>
+                            <div class="stat-value">{{ stats.result_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calculator stat-icon text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图表和最近数据 -->
+    <div class="row">
+        <!-- 图表 -->
+        <div class="col-lg-8">
+            <div class="row">
+                <!-- 指标类别分布图 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">指标类别分布</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="position: relative; height:250px;">
+                                <canvas id="category-distribution-chart" 
+                                        data-names="{{ chart_data.category_names }}" 
+                                        data-counts="{{ chart_data.category_counts }}"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 达标率图 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">指标达标率</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="position: relative; height:250px;">
+                                <canvas id="achievement-rate-chart" 
+                                        data-rate="{{ chart_data.achievement_rate }}"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速链接 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">快速操作</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('indicators.add_data') }}" class="btn btn-outline-primary w-100 py-3">
+                                <i class="fas fa-edit mb-2 d-block" style="font-size: 2rem;"></i>
+                                数据录入
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('indicators.import_data') }}" class="btn btn-outline-success w-100 py-3">
+                                <i class="fas fa-file-import mb-2 d-block" style="font-size: 2rem;"></i>
+                                批量导入
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('reports.index') }}" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-file-excel mb-2 d-block" style="font-size: 2rem;"></i>
+                                生成报表
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 最近数据 -->
+        <div class="col-lg-4">
+            <!-- 最近数据录入 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">最近数据录入</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% if recent_data %}
+                            {% for data in recent_data %}
+                                <a href="{{ url_for('indicators.view_data', data_id=data.id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ data.indicator.code }} - {{ data.indicator.name }}</h6>
+                                        <small>{{ data.submit_time.strftime('%Y-%m-%d') }}</small>
+                                    </div>
+                                    <p class="mb-1">医院: {{ data.hospital.name }}</p>
+                                    <small>提交人: {{ data.submitter.username if data.submitter else '未知' }}</small>
+                                </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="list-group-item text-center py-4">
+                                <p class="mb-0 text-muted">暂无数据录入</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('indicators.data_list') }}" class="btn btn-sm btn-primary">查看全部</a>
+                </div>
+            </div>
+
+            <!-- 最近计算结果 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">最近计算结果</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% if recent_results %}
+                            {% for result in recent_results %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ result.indicator.code }} - {{ result.indicator.name }}</h6>
+                                        <small>{{ result.calculation_time.strftime('%Y-%m-%d') }}</small>
+                                    </div>
+                                    <p class="mb-1">
+                                        结果值: {{ "%.2f"|format(result.value) }}{{ result.indicator.unit }}
+                                        <span class="badge {{ 'bg-success' if result.target_achieved else 'bg-danger' }} ms-2">
+                                            {{ '达标' if result.target_achieved else '未达标' }}
+                                        </span>
+                                    </p>
+                                    <small>医院: {{ result.hospital.name }}</small>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="list-group-item text-center py-4">
+                                <p class="mb-0 text-muted">暂无计算结果</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('dashboard.stats') }}" class="btn btn-sm btn-primary">查看全部</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+{% endblock %} 

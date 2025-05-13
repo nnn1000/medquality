@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}报表生成{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">报表生成</h1>
+    </div>
+
+    <div class="row">
+        <!-- 报表生成表单 -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">生成新报表</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('reports.generate') }}" id="report-form">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label class="form-label required" for="period_id">报告周期</label>
+                            {{ form.period_id(class="form-select") }}
+                            {% if form.period_id.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.period_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">选择要生成报表的时间周期</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label" for="hospital_id">医院</label>
+                            {{ form.hospital_id(class="form-select") }}
+                            {% if form.hospital_id.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.hospital_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">选择特定医院或生成全部医院的报告</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label required" for="report_type">报告类型</label>
+                            {{ form.report_type(class="form-select") }}
+                            {% if form.report_type.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.report_type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">选择要生成的报告类型</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">报告类型说明</h6>
+                            <ul class="small mb-0">
+                                <li><strong>标准报告</strong>：包含基本指标结果和达标情况</li>
+                                <li><strong>详细报告</strong>：包含详细的指标计算过程和分析</li>
+                                <li><strong>汇总报告</strong>：比较不同医院的指标结果（仅在选择"所有医院"时可用）</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 报表文件列表 -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">已生成报表</h5>
+                    <span class="badge bg-primary">{{ report_files|length }}个文件</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if report_files %}
+                        <form method="post" action="{{ url_for('reports.batch_delete') }}" id="batch-delete-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {% if current_user.is_admin %}
+                            <div class="d-flex justify-content-end m-2">
+                                <button type="button" id="select-all-btn" class="btn btn-sm btn-outline-secondary me-2">
+                                    <i class="fas fa-check-square"></i> 全选
+                                </button>
+                                <button type="submit" class="btn btn-sm btn-danger" id="batch-delete-btn" disabled>
+                                    <i class="fas fa-trash"></i> 批量删除
+                                </button>
+                            </div>
+                            {% endif %}
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped mb-0">
+                                    <thead>
+                                        <tr>
+                                            {% if current_user.is_admin %}
+                                            <th width="40">
+                                                <input type="checkbox" class="form-check-input" id="select-all">
+                                            </th>
+                                            {% endif %}
+                                            <th>文件名</th>
+                                            <th>创建时间</th>
+                                            <th>大小</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for file in report_files %}
+                                            <tr>
+                                                {% if current_user.is_admin %}
+                                                <td>
+                                                    <input type="checkbox" name="selected_files" value="{{ file.name }}" class="form-check-input report-checkbox">
+                                                </td>
+                                                {% endif %}
+                                                <td>{{ file.name }}</td>
+                                                <td>{{ file.created.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                                <td>{{ (file.size / 1024)|round(1) }} KB</td>
+                                                <td>
+                                                    <a href="{{ url_for('reports.download', filename=file.name) }}" class="btn btn-sm btn-outline-primary me-1">
+                                                        <i class="fas fa-download"></i> 下载
+                                                    </a>
+                                                    {% if current_user.is_admin %}
+                                                        <a href="{{ url_for('reports.delete', filename=file.name) }}" class="btn btn-sm btn-outline-danger" 
+                                                           onclick="return confirm('确定要删除这个报表文件吗？此操作不可撤销');">
+                                                            <i class="fas fa-trash"></i> 删除
+                                                        </a>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-excel fa-4x text-muted mb-3"></i>
+                            <p class="mb-0">暂无生成的报表文件</p>
+                            <p class="text-muted small">使用左侧表单生成您的第一个报表</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    console.log("报表生成页面已加载");
+
+    // 报告类型变更事件
+    $("#report_type").on("change", function() {
+        var selectedValue = $(this).val();
+        var hospitalSelector = $("#hospital_id");
+        
+        if (selectedValue === "summary") {
+            // 汇总报告类型，强制选择"所有医院"
+            hospitalSelector.val("0");
+            hospitalSelector.prop("disabled", true);
+        } else {
+            // 其他报告类型，恢复医院选择
+            hospitalSelector.prop("disabled", false);
+        }
+    });
+    
+    // 页面加载时触发一次报告类型变更事件
+    $("#report_type").trigger("change");
+    
+    // 批量删除相关代码
+    function updateBatchDeleteButton() {
+        var hasChecked = $('.report-checkbox:checked').length > 0;
+        $('#batch-delete-btn').prop('disabled', !hasChecked);
+    }
+    
+    // 全选/取消全选
+    $('#select-all').on('change', function() {
+        var isChecked = $(this).prop('checked');
+        $('.report-checkbox').prop('checked', isChecked);
+        updateBatchDeleteButton();
+    });
+    
+    // 全选按钮点击事件
+    $('#select-all-btn').on('click', function() {
+        var allChecked = $('.report-checkbox:checked').length === $('.report-checkbox').length;
+        $('.report-checkbox').prop('checked', !allChecked);
+        $('#select-all').prop('checked', !allChecked);
+        updateBatchDeleteButton();
+    });
+    
+    // 单个复选框变化事件
+    $(document).on('change', '.report-checkbox', function() {
+        var allChecked = $('.report-checkbox:checked').length === $('.report-checkbox').length;
+        $('#select-all').prop('checked', allChecked);
+        updateBatchDeleteButton();
+    });
+    
+    // 批量删除表单提交前确认
+    $('#batch-delete-form').on('submit', function(e) {
+        var checkedCount = $('.report-checkbox:checked').length;
+        if (!confirm(`确定要删除选中的 ${checkedCount} 个报表文件吗？此操作不可撤销`)) {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

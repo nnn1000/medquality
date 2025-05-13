@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}注册新用户{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i>注册新用户
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" action="{{ url_for('auth.register') }}">
+                        {{ form.hidden_tag() }}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label required" for="username">用户名</label>
+                                {{ form.username(class="form-control", placeholder="4-64个字符") }}
+                                {% if form.username.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.username.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required" for="email">电子邮箱</label>
+                                {{ form.email(class="form-control", placeholder="有效的电子邮箱地址") }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.email.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label required" for="password">密码</label>
+                                {{ form.password(class="form-control", placeholder="至少6个字符") }}
+                                {% if form.password.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.password.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required" for="password2">确认密码</label>
+                                {{ form.password2(class="form-control", placeholder="再次输入密码") }}
+                                {% if form.password2.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.password2.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="hospital_id">所属医院</label>
+                            {{ form.hospital_id(class="form-select") }}
+                            {% if form.hospital_id.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.hospital_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">选择"无"表示该用户不属于任何医院</div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>返回
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

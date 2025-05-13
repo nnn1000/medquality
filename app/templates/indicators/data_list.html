@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+
+{% block title %}原始数据列表{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">医疗质量指标数据</h1>
+        
+        <div class="d-flex">
+            <a href="{{ url_for('indicators.add_data') }}" class="btn btn-primary me-2">
+                <i class="fas fa-plus me-1"></i>数据录入
+            </a>
+            <a href="{{ url_for('indicators.import_data') }}" class="btn btn-success me-2">
+                <i class="fas fa-file-import me-1"></i>批量导入
+            </a>
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('indicators.recalculate_all') }}" class="btn btn-warning" onclick="return confirm('确定要重新计算所有缺失结果吗？');">
+                <i class="fas fa-sync me-1"></i>重新计算缺失结果
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">筛选条件</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{{ url_for('indicators.data_list') }}" class="row g-3" id="filter-form">
+                        <div class="col-md-3">
+                            <label for="hospital" class="form-label">医院</label>
+                            <select id="hospital" name="hospital_id" class="form-select">
+                                <option value="">全部医院</option>
+                                {% for hospital in hospitals %}
+                                <option value="{{ hospital.id }}" {% if current_hospital_id == hospital.id %}selected{% endif %}>{{ hospital.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="custom_period" class="form-label">报告期</label>
+                            <input type="text" id="custom_period" data-monthpicker class="form-control" placeholder="请选择报告周期">
+                            <input type="hidden" name="period_id" id="period_id_hidden" value="{{ current_period_id }}">
+                            
+                            <!-- 在HTML中渲染一个包含所有周期数据的script标签 -->
+                            <script type="application/json" id="period-data">
+                                [
+                                    {"id": "", "name": "全部报告期"},
+                                    {% for period in periods %}
+                                    {"id": {{ period.id }}, "name": "{{ period.name }}"}{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                ]
+                            </script>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="indicator" class="form-label">指标</label>
+                            <select id="indicator" name="indicator_id" class="form-select">
+                                <option value="">全部指标</option>
+                                {% for indicator in indicators %}
+                                <option value="{{ indicator.id }}" {% if current_indicator_id == indicator.id %}selected{% endif %}>{{ indicator.code }} - {{ indicator.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-1"></i>筛选
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">数据列表</h5>
+                    <span class="badge bg-info">共 {{ raw_data|length }} 条记录</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if raw_data %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>指标</th>
+                                    <th>医院</th>
+                                    <th>报告期</th>
+                                    <th>分子</th>
+                                    <th>分母</th>
+                                    <th>计算结果</th>
+                                    <th>达标情况</th>
+                                    <th>提交时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in raw_data %}
+                                <tr>
+                                    <td>{{ data.indicator.code }} - {{ data.indicator.name }}</td>
+                                    <td>{{ data.hospital.name }}</td>
+                                    <td>{{ data.period.name }}</td>
+                                    <td>{{ data.numerator }}</td>
+                                    <td>{{ data.denominator }}</td>
+                                    <td>
+                                        {% if data.result %}
+                                        {{ "%.2f"|format(data.result.value) }} {{ data.indicator.unit }}
+                                        {% else %}
+                                        <span class="text-muted">未计算</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if data.result %}
+                                            {% if data.result.target_achieved == True %}
+                                            <span class="badge bg-success">达标</span>
+                                            {% elif data.result.target_achieved == False %}
+                                            <span class="badge bg-danger">未达标</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">无目标</span>
+                                            {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ data.submit_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('indicators.view_data', data_id=data.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('indicators.calculate', data_id=data.id) }}" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-calculator"></i>
+                                        </a>
+                                        {% if current_user.is_admin or current_user.id == data.submitter_id %}
+                                        <a href="{{ url_for('indicators.delete_data', data_id=data.id) }}" class="btn btn-sm btn-outline-danger" 
+                                           onclick="return confirm('确定要删除这条数据记录吗？相关的计算结果也将被删除，此操作不可撤销');">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center">
+                        <p class="mb-3 text-muted">暂无数据记录</p>
+                        <a href="{{ url_for('indicators.add_data') }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i>添加数据
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // 初始化月度选择器
+    const periodIdHidden = $("#period_id_hidden");
+    const customPeriod = $("#custom_period");
+    const periodData = JSON.parse(document.getElementById('period-data').textContent);
+    
+    // 初始化时设置所选周期
+    if (periodIdHidden.val()) {
+        const selectedPeriod = periodData.find(function(p) { return p.id == periodIdHidden.val(); });
+        if (selectedPeriod) {
+            customPeriod.val(selectedPeriod.name);
+        }
+    }
+    
+    // 月度选择器选择后的处理
+    customPeriod.on('change', function() {
+        const selectedValue = $(this).val();
+        
+        // 检查是否是跨年日期范围格式 (例如: "2023年12月-2024年3月")
+        const crossYearRangeMatch = selectedValue.match(/^(\d{4})年(\d{1,2})月-(\d{4})年(\d{1,2})月$/);
+        if (crossYearRangeMatch) {
+            // 跨年日期范围格式处理
+            const startYear = crossYearRangeMatch[1];
+            const startMonth = parseInt(crossYearRangeMatch[2]);
+            const endYear = crossYearRangeMatch[3];
+            const endMonth = parseInt(crossYearRangeMatch[4]);
+            
+            // 查找完全匹配的期间
+            let matchedPeriod = periodData.find(function(p) { 
+                return p.name === selectedValue;
+            });
+            
+            if (matchedPeriod) {
+                periodIdHidden.val(matchedPeriod.id);
+            } else {
+                // 如果是新的跨年日期范围，可以创建一个临时id或使用第一个有效期间
+                // 这里我们暂时使用列表中的第一个周期（如果存在）
+                if (periodData.length > 0) {
+                    periodIdHidden.val(periodData[0].id);
+                    console.log("找不到匹配的跨年周期，使用默认值: " + periodData[0].id);
+                } else {
+                    alert("系统中没有可用的报告周期，请先创建报告周期");
+                    periodIdHidden.val('');
+                }
+            }
+        } else {
+            // 检查是否是同年日期范围格式 (例如: "2024年1月-6月")
+            const rangeMatch = selectedValue.match(/^(\d{4})年(\d{1,2})月-(\d{1,2})月$/);
+            if (rangeMatch) {
+                // 对于日期范围，查找与开始月份和结束月份最匹配的期间
+                const year = rangeMatch[1];
+                const startMonth = parseInt(rangeMatch[2]);
+                const endMonth = parseInt(rangeMatch[3]);
+                
+                // 首先尝试查找完全匹配的期间
+                let matchedPeriod = periodData.find(function(p) { 
+                    return p.name === selectedValue || p.name === `${year}年${startMonth}月-${endMonth}月`;
+                });
+                
+                // 如果没找到完全匹配，可以查找日期范围接近的期间
+                if (!matchedPeriod) {
+                    if (startMonth === 1 && endMonth === 6) {
+                        // 查找上半年
+                        matchedPeriod = periodData.find(function(p) { 
+                            return p.name === `${year}年上半年` || p.name.includes(`${year}年上半年`);
+                        });
+                    } else if (startMonth === 7 && endMonth === 12) {
+                        // 查找下半年
+                        matchedPeriod = periodData.find(function(p) { 
+                            return p.name === `${year}年下半年` || p.name.includes(`${year}年下半年`);
+                        });
+                    } else if (startMonth === 1 && endMonth === 3) {
+                        // 查找第一季度
+                        matchedPeriod = periodData.find(function(p) { 
+                            return p.name === `${year}年第1季度` || p.name.includes(`${year}年第一季度`) || 
+                                  p.name.includes(`${year}年Q1`);
+                        });
+                    } else if (startMonth === 4 && endMonth === 6) {
+                        // 查找第二季度
+                        matchedPeriod = periodData.find(function(p) { 
+                            return p.name === `${year}年第2季度` || p.name.includes(`${year}年第二季度`) || 
+                                  p.name.includes(`${year}年Q2`);
+                        });
+                    } else if (startMonth === 7 && endMonth === 9) {
+                        // 查找第三季度
+                        matchedPeriod = periodData.find(function(p) { 
+                            return p.name === `${year}年第3季度` || p.name.includes(`${year}年第三季度`) || 
+                                  p.name.includes(`${year}年Q3`);
+                        });
+                    } else if (startMonth === 10 && endMonth === 12) {
+                        // 查找第四季度
+                        matchedPeriod = periodData.find(function(p) { 
+                            return p.name === `${year}年第4季度` || p.name.includes(`${year}年第四季度`) || 
+                                  p.name.includes(`${year}年Q4`);
+                        });
+                    } else if (startMonth === 1 && endMonth === 12) {
+                        // 查找全年
+                        matchedPeriod = periodData.find(function(p) { 
+                            return p.name === `${year}年` || p.name.includes(`${year}年全年`);
+                        });
+                    } else {
+                        // 查找单月，如果没有范围匹配
+                        if (startMonth === endMonth) {
+                            matchedPeriod = periodData.find(function(p) { 
+                                return p.name === `${year}年${startMonth}月`;
+                            });
+                        }
+                    }
+                }
+                
+                if (matchedPeriod) {
+                    periodIdHidden.val(matchedPeriod.id);
+                    console.log("找到匹配的周期: ", matchedPeriod.name, matchedPeriod.id);
+                } else {
+                    // 如果没有匹配的期间，使用默认值
+                    if (periodData.length > 0) {
+                        periodIdHidden.val(periodData[0].id);
+                        console.log("找不到匹配的周期，使用默认值: " + periodData[0].id);
+                    } else {
+                        alert("系统中没有可用的报告周期，请先创建报告周期");
+                        periodIdHidden.val('');
+                    }
+                }
+            } else {
+                // 对于非日期范围格式，可能是单月或其他格式
+                const matchedPeriod = periodData.find(function(p) { return p.name === selectedValue; });
+                if (matchedPeriod) {
+                    periodIdHidden.val(matchedPeriod.id);
+                } else {
+                    // 无匹配，使用第一个可用周期
+                    if (periodData.length > 0) {
+                        periodIdHidden.val(periodData[0].id);
+                        console.log("找不到匹配的周期，使用默认值: " + periodData[0].id);
+                    } else {
+                        alert("系统中没有可用的报告周期，请先创建报告周期");
+                        periodIdHidden.val('');
+                    }
+                }
+            }
+        }
+    });
+    
+    // 直接在monthpicker初始化后触发一次change事件，确保hidden字段有值
+    if (customPeriod.val()) {
+        customPeriod.trigger('change');
+    }
+});
+</script>
+{% endblock %} 

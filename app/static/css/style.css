@@ -1,0 +1,166 @@
+/* 主要样式定义 */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8f9fa;
+}
+
+main {
+    flex: 1;
+}
+
+.card {
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: #f0f7ff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 1rem;
+}
+
+.table th {
+    background-color: #f0f7ff;
+}
+
+/* 仪表盘卡片样式 */
+.stat-card {
+    border-left: 4px solid #007bff;
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card .card-body {
+    padding: 1.25rem;
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #0056b3;
+}
+
+.stat-card .stat-title {
+    color: #6c757d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-card .stat-icon {
+    font-size: 3rem;
+    opacity: 0.2;
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+}
+
+/* 表单样式 */
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+.required::after {
+    content: " *";
+    color: #dc3545;
+}
+
+/* 指标列表样式 */
+.indicator-item {
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    border-radius: 0.25rem;
+    background-color: #fff;
+    border-left: 3px solid #007bff;
+    transition: all 0.2s;
+}
+
+.indicator-item:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.indicator-code {
+    font-weight: 600;
+    color: #0056b3;
+    margin-right: 0.5rem;
+}
+
+/* 数据表格样式 */
+.data-table th {
+    position: sticky;
+    top: 0;
+    background-color: #f0f7ff;
+    z-index: 10;
+}
+
+.table-responsive {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* 状态标签 */
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 10rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-achieved {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-failed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* 报表卡片 */
+.report-card {
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    transition: all 0.2s;
+}
+
+.report-card:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+}
+
+.report-card .report-icon {
+    font-size: 2rem;
+    color: #007bff;
+}
+
+.report-card .report-info {
+    padding: 1rem;
+}
+
+.report-card .report-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.report-card .report-meta {
+    font-size: 0.8rem;
+    color: #6c757d;
+} 

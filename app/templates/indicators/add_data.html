@@ -1,0 +1,376 @@
+{% extends 'base.html' %}
+
+{% block title %}数据录入{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">指标数据录入</h1>
+        <a href="{{ url_for('indicators.data_list') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>返回数据列表
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">录入表单</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('indicators.add_data') }}" id="data-form">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label required" for="hospital_id">医院</label>
+                                {{ form.hospital_id(class="form-select") }}
+                                {% if form.hospital_id.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.hospital_id.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required" for="custom_period">报告周期</label>
+                                <input type="text" id="custom_period" data-monthpicker class="form-control" placeholder="请选择报告周期">
+                                <input type="hidden" name="period_id" id="period_id_hidden" value="{{ form.period_id.data }}">
+                                {% if form.period_id.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.period_id.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- 在HTML中渲染一个包含所有周期数据的script标签 -->
+                                <script type="application/json" id="period-data">
+                                    [
+                                        {% for option in form.period_id.choices %}
+                                        {"id": {{ option[0] }}, "name": "{{ option[1] }}"}{% if not loop.last %},{% endif %}
+                                        {% endfor %}
+                                    ]
+                                </script>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label required" for="indicator_id">指标</label>
+                            {{ form.indicator_id(class="form-select") }}
+                            {% if form.indicator_id.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.indicator_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- 指标信息显示区域 -->
+                        <div id="indicator-info" class="mb-3"></div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="numerator">分子</label>
+                                {{ form.numerator(class="form-control", placeholder="输入分子数值", type="number", min="0", step="any") }}
+                                {% if form.numerator.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.numerator.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">如果指标不需要分子/分母计算，只需填写适用的字段即可</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="denominator">分母</label>
+                                {{ form.denominator(class="form-control", placeholder="输入分母数值", type="number", min="0.01", step="any") }}
+                                {% if form.denominator.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.denominator.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label" for="note">备注</label>
+                            {{ form.note(class="form-control", rows=3, placeholder="输入可选的备注信息") }}
+                            {% if form.note.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.note.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('indicators.data_list') }}" class="btn btn-secondary">取消</a>
+                            {{ form.submit_btn(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">填写说明</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6><i class="fas fa-hospital me-2 text-primary"></i>医院</h6>
+                        <p class="text-muted small">选择需要录入数据的医院。如果您是医院用户，系统将自动选择您所在的医院。</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6><i class="fas fa-calendar-alt me-2 text-success"></i>报告周期</h6>
+                        <p class="text-muted small">选择报告周期，数据将会被归类到该周期下进行统计和分析。</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6><i class="fas fa-list-alt me-2 text-info"></i>指标</h6>
+                        <p class="text-muted small">选择需要录入的指标。选择后，系统会自动显示该指标的详细信息和计算方法。</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6><i class="fas fa-calculator me-2 text-warning"></i>分子和分母</h6>
+                        <p class="text-muted small">根据指标要求填写分子和分母数值。提交后系统会自动根据公式计算结果。</p>
+                    </div>
+                    
+                    <div>
+                        <h6><i class="fas fa-sticky-note me-2 text-secondary"></i>备注</h6>
+                        <p class="text-muted small">可以添加额外的说明或注释，以便于后续查看或解释数据。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取指标选择器
+    const indicatorSelect = document.getElementById('indicator_id');
+    const indicatorInfo = document.getElementById('indicator-info');
+    
+    // 初始化月度选择器
+    const periodIdHidden = document.getElementById('period_id_hidden');
+    const customPeriod = document.getElementById('custom_period');
+    const periodData = JSON.parse(document.getElementById('period-data').textContent);
+    
+    // 初始化时设置所选周期
+    if (periodIdHidden.value) {
+        const selectedPeriod = periodData.find(function(p) { return p.id == periodIdHidden.value; });
+        if (selectedPeriod) {
+            customPeriod.value = selectedPeriod.name;
+        }
+    }
+    
+    // 月度选择器选择后的处理
+    customPeriod.addEventListener('change', function() {
+        // 选择周期后不立即查找ID,而是等到表单提交时再处理
+        console.log('月度选择器值变更为:', this.value);
+    });
+    
+    // 添加表单提交前的验证
+    document.getElementById('data-form').addEventListener('submit', function(event) {
+        // 阻止默认提交
+        event.preventDefault();
+        
+        // 检查是否选择了报告周期
+        if (!customPeriod.value) {
+            alert('请选择报告周期');
+            return false;
+        }
+        
+        console.log("表单提交处理开始");
+        
+        // 在提交表单前尝试匹配period_id
+        const selectedPeriodName = customPeriod.value;
+        let matchedPeriodId = null;
+        
+        // 精确匹配
+        for (let i = 0; i < periodData.length; i++) {
+            if (periodData[i].name === selectedPeriodName) {
+                matchedPeriodId = periodData[i].id;
+                console.log('找到精确匹配的周期:', periodData[i].name, periodData[i].id);
+                break;
+            }
+        }
+        
+        // 如果没有精确匹配，尝试模糊匹配
+        if (!matchedPeriodId) {
+            console.log('未找到精确匹配，尝试模糊匹配');
+            
+            // 先使用月份选择器的值作为输入
+            const value = selectedPeriodName;
+            
+            // 解析输入的周期格式
+            const quarterMatch = value.match(/^(\d{4})年第(\d)季度$/);
+            const rangeMatch = value.match(/^(\d{4})年(\d{1,2})月-(\d{1,2})月$/);
+            const crossYearMatch = value.match(/^(\d{4})年(\d{1,2})月-(\d{4})年(\d{1,2})月$/);
+            
+            // 根据不同的格式进行匹配
+            if (quarterMatch) {
+                // 季度格式
+                const year = parseInt(quarterMatch[1]);
+                const quarter = parseInt(quarterMatch[2]);
+                
+                // 在periodData中查找匹配的季度
+                for (let i = 0; i < periodData.length; i++) {
+                    const period = periodData[i];
+                    
+                    // 尝试多种可能的季度表示方式
+                    if (period.name === `${year}年第${quarter}季度` || 
+                        period.name === `${year}年${quarter}季度` ||
+                        period.name.includes(`${year}`) && period.name.includes(`季度`) && period.name.includes(`${quarter}`)) {
+                        
+                        matchedPeriodId = period.id;
+                        console.log('找到季度匹配:', period.name, period.id);
+                        break;
+                    }
+                }
+            } else if (rangeMatch) {
+                // 单年月份范围格式
+                const year = parseInt(rangeMatch[1]);
+                const startMonth = parseInt(rangeMatch[2]);
+                const endMonth = parseInt(rangeMatch[3]);
+                
+                // 检查是否为标准季度范围
+                if (startMonth === 1 && endMonth === 3) {
+                    // 寻找第一季度
+                    for (let i = 0; i < periodData.length; i++) {
+                        if (periodData[i].name.includes(`${year}年第1季度`) || 
+                            periodData[i].name.includes(`${year}年第一季度`)) {
+                            matchedPeriodId = periodData[i].id;
+                            break;
+                        }
+                    }
+                } else if (startMonth === 4 && endMonth === 6) {
+                    // 寻找第二季度
+                    for (let i = 0; i < periodData.length; i++) {
+                        if (periodData[i].name.includes(`${year}年第2季度`) || 
+                            periodData[i].name.includes(`${year}年第二季度`)) {
+                            matchedPeriodId = periodData[i].id;
+                            break;
+                        }
+                    }
+                } else if (startMonth === 7 && endMonth === 9) {
+                    // 寻找第三季度
+                    for (let i = 0; i < periodData.length; i++) {
+                        if (periodData[i].name.includes(`${year}年第3季度`) || 
+                            periodData[i].name.includes(`${year}年第三季度`)) {
+                            matchedPeriodId = periodData[i].id;
+                            break;
+                        }
+                    }
+                } else if (startMonth === 10 && endMonth === 12) {
+                    // 寻找第四季度
+                    for (let i = 0; i < periodData.length; i++) {
+                        if (periodData[i].name.includes(`${year}年第4季度`) || 
+                            periodData[i].name.includes(`${year}年第四季度`)) {
+                            matchedPeriodId = periodData[i].id;
+                            break;
+                        }
+                    }
+                }
+                
+                // 如果没有匹配季度，尝试匹配任何包含年份的报告周期
+                if (!matchedPeriodId) {
+                    for (let i = 0; i < periodData.length; i++) {
+                        if (periodData[i].name.includes(`${year}年`)) {
+                            matchedPeriodId = periodData[i].id;
+                            console.log('找到年份匹配:', periodData[i].name, periodData[i].id);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 如果仍然没有匹配，使用第一个可用的周期
+        if (!matchedPeriodId && periodData.length > 0) {
+            matchedPeriodId = periodData[0].id;
+            console.log('没有找到匹配，使用默认周期:', periodData[0].name, periodData[0].id);
+        }
+        
+        // 更新隐藏字段
+        if (matchedPeriodId) {
+            periodIdHidden.value = matchedPeriodId;
+            console.log('已设置period_id为:', matchedPeriodId);
+        } else {
+            console.error('无法找到匹配的周期ID');
+            alert('系统中没有可用的报告周期，请先添加报告周期');
+            return false;
+        }
+        
+        // 提交表单
+        console.log('表单提交中...');
+        this.submit();
+    });
+    
+    // 添加更改事件处理
+    if (indicatorSelect && indicatorInfo) {
+        indicatorSelect.addEventListener('change', function() {
+            const indicatorId = this.value;
+            if (!indicatorId) {
+                indicatorInfo.innerHTML = '';
+                return;
+            }
+            
+            // 显示加载状态
+            indicatorInfo.innerHTML = '<div class="alert alert-info">加载指标信息中...</div>';
+            
+            // 使用真实API调用获取指标信息
+            fetch(`/api/indicators/${indicatorId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('API请求失败');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // 使用API返回的真实数据构建指标信息HTML
+                        const indicator = data.indicator;
+                        const html = `
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading"><strong>${indicator.code} - ${indicator.name}</strong></h6>
+                                <p class="mb-2"><strong>指标定义：</strong> ${indicator.definition || '无'}</p>
+                                <hr>
+                                <p class="mb-2"><strong>分子说明：</strong> ${indicator.numerator_description || '无'}</p>
+                                <p class="mb-2"><strong>分母说明：</strong> ${indicator.denominator_description || '无'}</p>
+                                <p class="mb-2"><strong>计算公式：</strong> ${indicator.calculation_formula || '无'}</p>
+                                <p class="mb-2"><strong>数据来源：</strong> ${indicator.data_source || '无'}</p>
+                                <p class="mb-0 small text-muted">提交后系统会自动计算指标结果并进行达标评估。</p>
+                            </div>
+                        `;
+                        indicatorInfo.innerHTML = html;
+                    } else {
+                        indicatorInfo.innerHTML = '<div class="alert alert-danger">获取指标信息失败</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('获取指标信息失败', error);
+                    indicatorInfo.innerHTML = '<div class="alert alert-danger">获取指标信息失败，请刷新页面重试</div>';
+                });
+        });
+        
+        // 初始触发，如果已有选择
+        if (indicatorSelect.value) {
+            const event = new Event('change');
+            indicatorSelect.dispatchEvent(event);
+        }
+    }
+});
+</script>
+{% endblock %} 

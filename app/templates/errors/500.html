@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}服务器错误{% endblock %}
+
+{% block content %}
+<div class="container text-center py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h1 class="display-1 text-danger">500</h1>
+                    <h2 class="mb-4">服务器内部错误</h2>
+                    <p class="lead mb-5">很抱歉，服务器遇到了意外错误，无法完成您的请求。我们的技术团队已经收到通知并正在修复。</p>
+                    <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-home me-2"></i>回到首页
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

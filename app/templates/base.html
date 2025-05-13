@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - 全面提升医疗质量管理系统</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <!-- Monthpicker CSS -->
+    <link href="{{ url_for('static', filename='css/monthpicker.css') }}" rel="stylesheet">
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-hospital-alt me-2"></i>全面提升医疗质量管理系统
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                    <ul class="navbar-nav me-auto">
+                        {% if current_user.is_authenticated %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+                                    <i class="fas fa-tachometer-alt me-1"></i>仪表盘
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.stats') }}">
+                                    <i class="fas fa-chart-bar me-1"></i>统计分析
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="indicatorsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-list-alt me-1"></i>指标管理
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="indicatorsDropdown">
+                                    <li><a class="dropdown-item" href="{{ url_for('indicators.index') }}">指标列表</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('indicators.data_list') }}">原始数据</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('indicators.add_data') }}">数据录入</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('indicators.import_data') }}">批量导入</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('reports.index') }}">
+                                    <i class="fas fa-file-excel me-1"></i>报表生成
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                    <ul class="navbar-nav">
+                        {% if current_user.is_authenticated %}
+                            {% if current_user.is_admin %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('auth.register') }}">
+                                        <i class="fas fa-user-plus me-1"></i>注册用户
+                                    </a>
+                                </li>
+                            {% endif %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user me-1"></i>{{ current_user.username }}
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" href="#">个人资料</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">退出登录</a></li>
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('auth.login') }}">
+                                    <i class="fas fa-sign-in-alt me-1"></i>登录
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-light mt-5 py-3">
+        <div class="container text-center">
+            <p class="mb-1">全面提升医疗质量管理系统 &copy; 2024</p>
+            <p class="text-muted small mb-0">基于《东莞市全面提升医疗质量操作手册（2024版）》</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    <!-- Monthpicker JS -->
+    <script src="{{ url_for('static', filename='js/monthpicker.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

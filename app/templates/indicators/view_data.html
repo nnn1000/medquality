@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">首页</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('indicators.data_list') }}">原始数据</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">数据详情</li>
+                </ol>
+            </nav>
+            <h1 class="h3">数据详情</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 左侧原始数据卡片 -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">原始数据信息</h5>
+                    <span class="badge bg-primary">ID: {{ raw_data.id }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <p class="text-muted mb-1">指标</p>
+                        <p class="h5">{{ raw_data.indicator.code }} - {{ raw_data.indicator.name }}</p>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">医院</p>
+                            <p>{{ raw_data.hospital.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">报告周期</p>
+                            <p>{{ raw_data.period.name }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">分子</p>
+                            <p>{{ raw_data.numerator }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">分母</p>
+                            <p>{{ raw_data.denominator }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-0">
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">提交时间</p>
+                            <p>{{ raw_data.submit_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">提交人</p>
+                            <p>{{ raw_data.submitter.username if raw_data.submitter else '未知' }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('indicators.calculate', data_id=raw_data.id) }}" class="btn btn-primary">
+                        <i class="fas fa-calculator me-1"></i>重新计算
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧计算结果卡片 -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">计算结果</h5>
+                </div>
+                <div class="card-body">
+                    {% if result %}
+                        <div class="text-center mb-4">
+                            <div class="display-6 fw-bold">
+                                {{ "%.2f"|format(result.value) }}{{ raw_data.indicator.unit }}
+                            </div>
+                            {% if result.target_achieved == True %}
+                                <span class="badge bg-success fs-6 mt-2 px-3 py-2">达标</span>
+                            {% elif result.target_achieved == False %}
+                                <span class="badge bg-danger fs-6 mt-2 px-3 py-2">未达标</span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6 mt-2 px-3 py-2">无目标</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <p class="text-muted mb-1">指标导向</p>
+                            <p>{{ raw_data.indicator.target_value }}</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <p class="text-muted mb-1">计算公式</p>
+                            <div class="alert alert-info alert-permanent">
+                                {{ raw_data.indicator.calculation_formula or '无' }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-0">
+                            <p class="text-muted mb-1">计算时间</p>
+                            <p>{{ result.calculation_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-calculator fa-4x text-muted mb-3"></i>
+                            <p class="mb-3">该指标尚未计算结果</p>
+                            <a href="{{ url_for('indicators.calculate', data_id=raw_data.id) }}" class="btn btn-primary">
+                                <i class="fas fa-calculator me-1"></i>立即计算
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}指标列表{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">医疗质量指标列表</h1>
+        
+        <div class="d-flex">
+            <div class="dropdown me-2">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="categoryDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    按类别筛选
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
+                    <li><a class="dropdown-item {% if not current_category_id %}active{% endif %}" href="{{ url_for('indicators.index') }}">所有类别</a></li>
+                    {% for category in categories %}
+                        <li><a class="dropdown-item {% if current_category_id == category.id %}active{% endif %}" href="{{ url_for('indicators.index', category_id=category.id) }}">{{ category.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <a href="{{ url_for('indicators.data_list') }}" class="btn btn-primary">
+                <i class="fas fa-table me-1"></i>查看数据
+            </a>
+        </div>
+    </div>
+
+    <!-- 指标类别卡片 -->
+    <div class="row">
+        {% for category in categories %}
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ category.name }}</h5>
+                        <p class="card-text text-muted small">{{ category.description }}</p>
+                        <a href="{{ url_for('indicators.index', category_id=category.id) }}" class="btn btn-sm btn-outline-primary">查看指标</a>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <small class="text-muted">
+                            共 {{ category.indicators.count() }} 个指标
+                        </small>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- 指标列表 -->
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">指标列表</h5>
+            {% if current_category_id %}
+                <span class="badge bg-primary">
+                    {{ categories|selectattr('id', 'equalto', current_category_id)|map(attribute='name')|first }}
+                </span>
+            {% else %}
+                <span class="badge bg-secondary">所有类别</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 70px;">编码</th>
+                            <th>名称</th>
+                            <th style="min-width: 130px;">类别</th>
+                            <th style="min-width: 60px;">单位</th>
+                            <th style="min-width: 100px;">指标导向</th>
+                            <th style="min-width: 120px;">监测频率</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for indicator in indicators %}
+                            <tr>
+                                <td><span class="fw-bold">{{ indicator.code }}</span></td>
+                                <td>{{ indicator.name }}</td>
+                                <td>{{ indicator.category.name }}</td>
+                                <td>{{ indicator.unit }}</td>
+                                <td>{{ indicator.target_value }}</td>
+                                <td>{{ indicator.frequency }}</td>
+                                <td>
+                                    <a href="{{ url_for('indicators.view', indicator_id=indicator.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> 查看
+                                    </a>
+                                    <a href="{{ url_for('indicators.edit', indicator_id=indicator.id) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit"></i> 编辑
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

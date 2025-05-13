@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}指标详情{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">指标详情</h1>
+        <div>
+            <a href="{{ url_for('indicators.edit', indicator_id=indicator.id) }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-edit me-1"></i>编辑指标
+            </a>
+            <a href="{{ url_for('indicators.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>返回指标列表
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 指标基本信息 -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ indicator.code }} - {{ indicator.name }}</h5>
+                    <span class="badge bg-primary">{{ indicator.category.name }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <p class="text-muted mb-1">指标编码</p>
+                            <p class="fw-bold">{{ indicator.code }}</p>
+                        </div>
+                        <div class="col-md-5">
+                            <p class="text-muted mb-1">指标名称</p>
+                            <p class="fw-bold">{{ indicator.name }}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="text-muted mb-1">目标值</p>
+                            <p class="fw-bold">{{ indicator.target_value }}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="text-muted mb-1">监测频率</p>
+                            <p class="fw-bold">{{ indicator.frequency }}</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="text-muted mb-1">指标定义</p>
+                        <p>{{ indicator.definition or '暂无定义' }}</p>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">分子说明</p>
+                            <p>{{ indicator.numerator_description or '无' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">分母说明</p>
+                            <p>{{ indicator.denominator_description or '无' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="text-muted mb-1">计算公式</p>
+                        <div class="alert alert-info alert-permanent">
+                            {{ indicator.calculation_formula or '无' }}
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <p class="text-muted mb-1">数据来源</p>
+                        <p>{{ indicator.data_source or '未指定' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最近数据和结果 -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">最近数据记录</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if indicator.raw_data %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>医院</th>
+                                        <th>周期</th>
+                                        <th>分子</th>
+                                        <th>分母</th>
+                                        <th>计算结果</th>
+                                        <th>是否达标</th>
+                                        <th>提交时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for data in indicator.raw_data[:5] %}
+                                        <tr>
+                                            <td>{{ data.hospital.name }}</td>
+                                            <td>{{ data.period.name }}</td>
+                                            <td>{{ data.numerator }}</td>
+                                            <td>{{ data.denominator }}</td>
+                                            <td>
+                                                {% if data.result %}
+                                                    {{ "%.2f"|format(data.result.value) }} {{ indicator.unit }}
+                                                {% else %}
+                                                    <span class="text-muted">未计算</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if data.result %}
+                                                    {% if data.result.target_achieved %}
+                                                        <span class="badge bg-success">达标</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">未达标</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ data.submit_time.strftime('%Y-%m-%d') }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center">
+                            <p class="mb-0 text-muted">暂无数据记录</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('indicators.data_list', indicator_id=indicator.id) }}" class="btn btn-sm btn-primary">查看全部数据</a>
+                    <a href="{{ url_for('indicators.add_data') }}" class="btn btn-sm btn-success">
+                        <i class="fas fa-plus me-1"></i>录入新数据
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧信息 -->
+        <div class="col-lg-4">
+            <!-- 快速操作 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">快速操作</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('indicators.add_data') }}" class="btn btn-primary">
+                            <i class="fas fa-edit me-1"></i>录入此指标数据
+                        </a>
+                        <a href="{{ url_for('reports.index') }}" class="btn btn-outline-success">
+                            <i class="fas fa-file-excel me-1"></i>生成包含此指标的报表
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 指标相关说明 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">指标评估说明</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6><i class="fas fa-bullseye me-2 text-primary"></i>指标导向</h6>
+                        <p class="small text-muted">{{ indicator.target_value }}</p>
+                        {% if indicator.unit == '%' %}
+                            <p class="small">百分比类指标，值越高越好，高于或等于指标导向视为达标。</p>
+                        {% elif indicator.unit in ['分钟', '小时', '天'] %}
+                            <p class="small">时间类指标，值越低越好，低于或等于指标导向视为达标。</p>
+                        {% else %}
+                            <p class="small">一般性指标，高于或等于指标导向视为达标。</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <h6><i class="fas fa-calendar-alt me-2 text-success"></i>监测频率</h6>
+                        <p class="small">该指标需要{{ indicator.frequency }}进行评估。</p>
+                    </div>
+
+                    <div>
+                        <h6><i class="fas fa-database me-2 text-info"></i>数据来源</h6>
+                        <p class="small mb-0">{{ indicator.data_source or '未指定数据来源' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 类别信息 -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">类别信息</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">{{ indicator.category.name }}</h6>
+                    <p class="card-text small text-muted">{{ indicator.category.description }}</p>
+                    <a href="{{ url_for('indicators.index', category_id=indicator.category.id) }}" class="btn btn-sm btn-outline-primary">
+                        查看同类指标
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
